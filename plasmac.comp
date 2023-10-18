@@ -151,6 +151,8 @@ pin in  s32     y_offset                    "offset to apply to axis y for consu
 pin in  float   y_offset_current            "current z axis offset, connect to axis.y.eoffset";
 pin in  float   z_offset_current            "current z axis offset, connect to axis.z.eoffset";
 pin in  float   zero_window = 0.1           "sets window that voltage fluctuations show as zero (-0.1 to 0.1 at default value)";
+// Pierce user control pins
+pin in  bit     pierce_with_motion = 0      "allows motion to progress during pierce. i.e. no Feed Hold";
 
 /* OUTPUT PINS */
 pin out float   adaptive_feed               "for reverse-run, connect to motion.adaptive-feed";
@@ -1495,7 +1497,11 @@ FUNCTION(_) {
             case PIERCE_DELAY:
                 stop_type = NONE;
                 /* wait for arc to pierce stock */
-                feed_hold = TRUE;
+                if(pierce_with_motion){
+			        feed_hold = FALSE;
+			    }else{
+			        feed_hold = TRUE;
+			    }
                 if(pierce_timer > 0){
                     pierce_timer -= fperiod;
                 }else if((puddle_jump_delay || puddle_jump_percent != 100) && !cut_recovering){
