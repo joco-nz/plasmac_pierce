@@ -1,0 +1,55 @@
+;     file name: wiggle-test.ngc
+; date and time: Wed Oct 18 2023    5:33:47 PM
+; postprocessor: LinuxCNC PlasmaC.scpost rev: 0.5
+
+; 27Amp on 6mm Mild Steel per Unimig Viper Cut 30.
+; 340mm/min, 3mm wiggle, 3 wiggles, Pierce Delay 1.59s
+;
+;begin pre-amble
+ G21 (units: metric)
+ G40 (cutter compensation: off)
+ G90 (distance mode: absolute)
+ M52 P1 (adaptive feed: on)
+ M65 P2 (enable THC)
+ M65 P3 (enable torch)
+ M68 E3 Q0 (velocity 100%)
+ G64 P0.254 Q0.025 (tracking tolerances: 0.254mm)
+#<holes>      = 0
+#<h_velocity> = 60
+#<h_diameter> = 32
+#<oclength>   = 4
+;end pre-amble
+;
+;begin material setup
+ T0 M6 (select plasma tool)
+ G43 H0 (apply tool offsets)
+ (o=0,kw=1.65, ph=3.5, pd=20, ch=1.5, fr=340, th=0, cv=99, pe=0, jh=0, jd=0)
+ F#<_hal[plasmac.cut-feed-rate]>
+;end material setup
+ G0 X25 Y51.825
+ M3 $0 S1 (plasma start)
+ G1 X25 Y48.825
+ G1 X25 Y51.825
+ G1 X25 Y48.825
+ G1 X25 Y51.825
+ G1 X25 Y48.825
+ G1 X25 Y45.825
+ G2 X25 Y45.825 I0 J-20.825
+ G2 X26.997 Y45.729 I0 J-20.825
+ M5 $0 (plasma end)
+ ;
+ ;begin post-amble
+ G40 (cutter compensation: off)
+ G90 (distance mode: absolute)
+ M65 P2 (enable THC)
+ M65 P3 (enable torch)
+ M68 E3 Q0 (velocity 100%)
+ M5 $-1 (backup stop)
+ ;end post-amble
+ ;
+ ;begin statistics
+ ;Pierces = 1
+ ;   Cuts = 1,    Length = 138.85mm
+ ;end statistics
+ ;
+ M30 (end program)
