@@ -152,7 +152,12 @@ pin in  float   y_offset_current            "current z axis offset, connect to a
 pin in  float   z_offset_current            "current z axis offset, connect to axis.z.eoffset";
 pin in  float   zero_window = 0.1           "sets window that voltage fluctuations show as zero (-0.1 to 0.1 at default value)";
 // Pierce user control pins
-pin in  bit     pierce_with_motion = 0      "allows motion to progress during pierce. i.e. no Feed Hold";
+pin in  unsigned  pierce_with_motion = 0    "allows motion to progress during pierce. 0=No movement, 1=Wiggle, 2=Ramp";
+pin in  float   pierce_motion_delay = 0     "delay starting motion during pierce delay period. Only used whrn pierce-with-moton is True";
+pin in  float   cut_height_delay = 0        "at the end of transition to end-perice-height how long to pause before transition to cut height";
+pin in  float   pierce_end_height = 0       "The height at end of piercing (in machine units). Can be different to Cut Height. Default 0 means not used. i.e. no change in height";
+pin in  float   gouge_speed = 0             "Ramp starting speed for gouge. In machine units/min.";
+pin in  float   creep_speed = 0             "Ramp creep or intermediate speed. Comes after gouge and is before cut speed. In machine units/min.";
 
 /* OUTPUT PINS */
 pin out float   adaptive_feed               "for reverse-run, connect to motion.adaptive-feed";
@@ -315,6 +320,11 @@ variable int    y_velocity;                 /* velocity for y motion for consuma
 variable int    z_max;                      /* max height for testing against pierce height*/
 variable int    z_pierce;                   /* pierce height for testing against max height*/
 variable int    zero_target;                /* zero height target offset */
+// Pierce user control pins
+variable float  pierce_motion_delay_timer;  /* delay starting motion during pierce delay period. Only used whrn pierce-with-moton is True*/
+variable float  cut_height_delay_timer;     /* at the end of transition to end-perice-height how long to pause before transition to cut height*/
+variable float  total_pierce_state_delay;   /* Total of pierce delay and cut motion delay */
+variable int    pierce_end_target;          /* Target pierce height at end of pierce motion. Usually less than the starting pierce height */
 
 // temp for testing forum post #210558
 // https://forum.linuxcnc.org/plasmac/42690-is-this-qtplasmac-expected-behaviour-cycle-start-and-jog-disabled?start=0#210558
@@ -1306,6 +1316,7 @@ FUNCTION(_) {
                     zero_target = z_offset_counts + probe_offset;
                     cut_target = offset_datum = zero_target + (cut_height / offset_scale);
                     pierce_target = zero_target + (pierce_height / offset_scale);
+                    pierce_end_target = zero_target + (pierce_end_height / offset_scale);
                     puddle_jump_target = zero_target + ((pierce_height * puddle_jump_percent * 0.01) / offset_scale );
                     safe_min = pierce_target + ((1 * units_per_mm) / offset_scale);
                     safe_preferred = zero_target + (safe_height / offset_scale);
@@ -1400,8 +1411,10 @@ FUNCTION(_) {
                             if(probe_testing){
                                 state = PROBE_TEST;
                             }else if(!torch_enable){
-                                pierce_timer = pierce_delay;
+                                pierce_timer = pierce_delay + cut_height_delay;
                                 state = PIERCE_DELAY;
+                                pierce_motion_delay_timer = pierce_motion_delay;
+                                cut_height_delay_timer = cut_height_delay;
                             }else if((tool == CUTTING || tool == SPOTTING) &&
                                      (!offset_probing || (offset_probing &&
                                      (int)(x_offset_current * offset_res) == (int)(op_x_start * offset_scale * offset_res) &&
@@ -1490,18 +1503,42 @@ FUNCTION(_) {
                     arc_starts += 1;
                     state = TORCH_ON;
                 }else if((arc_ok_out || ignore_arc_ok_0 || ignore_arc_ok_1) && tool != SPOTTING){
-                        pierce_timer = pierce_delay;
+                        pierce_timer = pierce_delay + cut_height_delay;
                         state = PIERCE_DELAY;
+                        pierce_motion_delay_timer = pierce_motion_delay;
+                        cut_height_delay_timer = cut_height_delay;
                 }
                 break;
             case PIERCE_DELAY:
+                rtapi_print("PIERCE_DELAY\n");
                 stop_type = NONE;
                 /* wait for arc to pierce stock */
-                if(pierce_with_motion){
-			        feed_hold = FALSE;
-			    }else{
-			        feed_hold = TRUE;
-			    }
+                feed_hold = TRUE;                   // base assumption is no motion
+                if(pierce_with_motion != 0){        // Test pierce type. 0=Normal, 1=Wiggle, 2=Ramp
+                    rtapi_print("PIERCE_DELAY - pierce_with_motion >0\n");
+                    feed_hold = FALSE;              // We have motion for non normal pierce
+                    if(pierce_with_motion == 2){
+                        // for ramp we map have no motion for a period at the start before commencing a moving pierce and loweing height
+                        rtapi_print("PIERCE_DELAY - pierce_with_motion == 2\n");
+                        if (pierce_motion_delay_timer > 0){
+                            rtapi_print("PIERCE_DELAY - pierce_motion_delay_timer > 0\n");
+                            feed_hold = TRUE;
+                            pierce_motion_delay_timer -= fperiod;
+                        }else{
+                            // motion delay is over so process for ramp down to
+                            // end pierce height
+                            rtapi_print("PIERCE_DELAY - pierce_motion_delay_timer <= 0\n");
+                            z_offset_enable = TRUE;
+                            if(z_offset_counts != pierce_end_target){
+                                rtapi_print("PIERCE_DELAY - move z_offset_counts\n");
+                                z_offset_counts = offset_move(z_offset_counts,
+                                                (((pierce_height - pierce_end_height)/(pierce_delay - pierce_motion_delay))*60)*velocity_scale,
+                                                pierce_end_target);
+                            }
+                        }
+                    }
+                }
+                // normal pierce timer processing
                 if(pierce_timer > 0){
                     pierce_timer -= fperiod;
                 }else if((puddle_jump_delay || puddle_jump_percent != 100) && !cut_recovering){
