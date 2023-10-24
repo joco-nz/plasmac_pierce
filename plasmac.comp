@@ -152,7 +152,7 @@ pin in  float   y_offset_current            "current z axis offset, connect to a
 pin in  float   z_offset_current            "current z axis offset, connect to axis.z.eoffset";
 pin in  float   zero_window = 0.1           "sets window that voltage fluctuations show as zero (-0.1 to 0.1 at default value)";
 // Pierce user control pins
-pin in  unsigned  pierce_with_motion = 0    "allows motion to progress during pierce. 0=No movement, 1=Wiggle, 2=Ramp";
+pin in  unsigned  pierce_type = 0    "allows motion to progress during pierce. 0=No movement, 1=Wiggle, 2=Ramp";
 pin in  float   pierce_motion_delay = 0     "delay starting motion during pierce delay period. Only used whrn pierce-with-moton is True";
 pin in  float   cut_height_delay = 0        "at the end of transition to end-perice-height how long to pause before transition to cut height";
 pin in  float   pierce_end_height = 0       "The height at end of piercing (in machine units). Can be different to Cut Height. Default 0 means not used. i.e. no change in height";
@@ -328,7 +328,9 @@ variable float  cut_height_delay_timer;     /* at the end of transition to end-p
 variable float  total_pierce_state_delay;   /* Total of pierce delay and cut motion delay */
 variable int    pierce_end_target;          /* Target pierce height at end of pierce motion. Usually less than the starting pierce height */
 variable float  gouge_speed_timer;
+variable float  gouge_speed_scale;
 variable float  creep_speed_timer;
+variable float  creep_speed_scale;
 
 // temp for testing forum post #210558
 // https://forum.linuxcnc.org/plasmac/42690-is-this-qtplasmac-expected-behaviour-cycle-start-and-jog-disabled?start=0#210558
@@ -1419,6 +1421,8 @@ FUNCTION(_) {
                                 state = PIERCE_DELAY;
                                 pierce_motion_delay_timer = pierce_motion_delay;
                                 cut_height_delay_timer = cut_height_delay;
+                                gouge_speed_timer = gouge_speed_time;
+                                creep_speed_timer = creep_speed_time;
                             }else if((tool == CUTTING || tool == SPOTTING) &&
                                      (!offset_probing || (offset_probing &&
                                      (int)(x_offset_current * offset_res) == (int)(op_x_start * offset_scale * offset_res) &&
@@ -1511,6 +1515,8 @@ FUNCTION(_) {
                         state = PIERCE_DELAY;
                         pierce_motion_delay_timer = pierce_motion_delay;
                         cut_height_delay_timer = cut_height_delay;
+                        gouge_speed_timer = gouge_speed_time;
+                        creep_speed_timer = creep_speed_time;
                 }
                 break;
             case PIERCE_DELAY:
@@ -1518,10 +1524,10 @@ FUNCTION(_) {
                 stop_type = NONE;
                 /* wait for arc to pierce stock */
                 feed_hold = TRUE;                   // base assumption is no motion
-                if(pierce_with_motion != 0){        // Test pierce type. 0=Normal, 1=Wiggle, 2=Ramp
-                    rtapi_print("PIERCE_DELAY - pierce_with_motion >0\n");
+                if(pierce_type != 0){        // Test pierce type. 0=Normal, 1=Wiggle, 2=Ramp
+                    rtapi_print("PIERCE_DELAY - pierce_type >0\n");
                     feed_hold = FALSE;              // We have motion for non normal pierce
-                    if(pierce_with_motion == 2){
+                    if(pierce_type == 2){
                         /* for ramp we map have no motion for a period at the start before commencing a moving pierce and loweing height
                            Sequence being tested for is
                            1. pierce motion delay
@@ -1533,15 +1539,42 @@ FUNCTION(_) {
                            B. Crawl speed for crawl time periof
                            C. Cut speed - should returning to normal feed rate.
                         */
-                        rtapi_print("PIERCE_DELAY - pierce_with_motion == 2\n");
+                        rtapi_print("PIERCE_DELAY - pierce_type == 2\n");
+                        /* Set up some key variables */
+                        gouge_speed_scale = gouge_speed / cut_feed_rate;
+                        creep_speed_scale = creep_speed / cut_feed_rate;
+
+                        if (gouge_speed_timer > 0){
+                            /* gouge timer */
+                            rtapi_print("PIERCE_DELAY - Seq A\n");
+                            if(gcode_scale == 1){
+                                requested_feed_rate = cut_feed_rate * gouge_speed_scale;
+                            }else{
+                                requested_feed_rate = (cut_feed_rate * gouge_speed_scale) / gcode_scale;
+                            }
+                            gouge_speed_timer -= fperiod;
+                        }else if(creep_speed_timer > 0){
+                            /* crawl timer */
+                            rtapi_print("PIERCE_DELAY - Seq B\n");
+                            if(gcode_scale == 1){
+                                requested_feed_rate = cut_feed_rate * creep_speed_scale;
+                            }else{
+                                requested_feed_rate = (cut_feed_rate * creep_speed_scale) / gcode_scale;
+                            }
+                            creep_speed_timer -= fperiod;
+                        }else{
+                            rtapi_print("PIERCE_DELAY - set requested feed = cut feed\n");
+                            requested_feed_rate = cut_feed_rate;
+                        }
+
                         if (pierce_motion_delay_timer > 0){
                             // Sequence 1
-                            rtapi_print("PIERCE_DELAY - pierce_motion_delay_timer > 0\n");
+                            rtapi_print("PIERCE_DELAY - Seq 1\n");
                             feed_hold = TRUE;
                             pierce_motion_delay_timer -= fperiod;
                         }else if(z_offset_counts != pierce_end_target){
                             // Sequence 2
-                            rtapi_print("PIERCE_DELAY - pierce_motion_delay_timer <= 0\n");
+                            rtapi_print("PIERCE_DELAY - Seq 2\n");
                             z_offset_enable = TRUE;
                             rtapi_print("PIERCE_DELAY - move z_offset_counts\n");
                             z_offset_counts = offset_move(z_offset_counts,
@@ -1549,6 +1582,7 @@ FUNCTION(_) {
                                             pierce_end_target);
                         }else{
                             // Sequence 3
+                            rtapi_print("PIERCE_DELAY - Seq 3\n");
                             feed_hold = TRUE;
                             cut_height_delay_timer -= fperiod;
                         }
