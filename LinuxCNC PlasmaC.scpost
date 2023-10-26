@@ -38,7 +38,8 @@ if cParms then
    post.DefineCustomToolParam('PlasmaTool', 'Puddle jump delay', 'pjDelay', sc.unit2DECPLACE, 0, 0, 9)
    post.DefineCustomToolParam('PlasmaTool', 'THC enable', 'thcEnable', sc.unitBOOLEAN, 1, 0, 1)
    post.DefineCustomToolParam('PlasmaTool', 'Cut voltage', 'cutVolts', sc.unit0DECPLACE, 99, 0, 200)
-   post.DefineCustomToolParam('PlasmaTool', 'Plasmac M259 Params', 'm259Params', sc.unitTEXT, "D2 E20 I3 J5 K325 P10 Q80 R10", 0, 0)
+   --post.DefineCustomToolParam('PlasmaTool', 'Plasmac M259 Params', 'm259Params', sc.unitTEXT, "D2 E20 I3 J5 K325 P10 Q80 R10", 0, 0)
+   post.DefineCustomToolParam('PlasmaTool', 'Plasmac M259 Params', 'm259Params', sc.unitTEXT, "", 0, 0)
 end
 
 if pmx485 then
