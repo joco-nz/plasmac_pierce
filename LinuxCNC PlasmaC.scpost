@@ -62,10 +62,6 @@ function OnInit()
    post.Text (';\n')
    post.Text (';begin pre-amble\n')
    
-   if zgcode then
-      post.Text (' #<keep-z-motion> = 1\n')
-   end
-
    if scale == metric then
      minimumMove = '0.000001'
      post.Text (' G21 (units: metric)\n') --metric mode
@@ -220,9 +216,6 @@ function OnMove()
    post.Text (' G1')
    post.NonModalNumber (' X', endX * scale, precision)
    post.NonModalNumber (' Y', endY * scale, precision)
-   if zgcode and leadinType == 1 then
-      post.NonModalNumber (' Z', endZ * scale, precision)
-   end
    post.Text ('\n')
 end
 
