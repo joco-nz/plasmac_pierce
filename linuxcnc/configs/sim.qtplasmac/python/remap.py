@@ -103,13 +103,23 @@ def m259(self,**words):
 
     #
     RUN(['halcmd', 'setp', 'plasmac.pierce-type', '{}'.format(int(words["d"]))])
-    RUN(['halcmd', 'setp', 'plasmac.pierce-motion-delay', '{}'.format(words["e"])])
-    RUN(['halcmd', 'setp', 'plasmac.cut-height-delay', '{}'.format(words["i"])])
-    RUN(['halcmd', 'setp', 'plasmac.pierce-end-height', '{}'.format(words["j"])])
-    RUN(['halcmd', 'setp', 'plasmac.gouge-speed', '{}'.format(words["k"])])
-    RUN(['halcmd', 'setp', 'plasmac.gouge-speed-distance', '{}'.format(words["p"])])
-    RUN(['halcmd', 'setp', 'plasmac.creep-speed', '{}'.format(words["q"])])
-    RUN(['halcmd', 'setp', 'plasmac.creep-speed-distance', '{}'.format(words["r"])])
+    if int(words["d"] == 2):
+        RUN(['halcmd', 'setp', 'plasmac.pierce-motion-delay', '{}'.format(words["e"])])
+        RUN(['halcmd', 'setp', 'plasmac.cut-height-delay', '{}'.format(words["i"])])
+        RUN(['halcmd', 'setp', 'plasmac.pierce-end-height', '{}'.format(words["j"])])
+        RUN(['halcmd', 'setp', 'plasmac.gouge-speed', '{}'.format(words["k"])])
+        RUN(['halcmd', 'setp', 'plasmac.gouge-speed-distance', '{}'.format(words["p"])])
+        RUN(['halcmd', 'setp', 'plasmac.creep-speed', '{}'.format(words["q"])])
+        RUN(['halcmd', 'setp', 'plasmac.creep-speed-distance', '{}'.format(words["r"])])
+    else:
+        RUN(['halcmd', 'setp', 'plasmac.pierce-motion-delay', '0.0'])
+        RUN(['halcmd', 'setp', 'plasmac.cut-height-delay', '0.0'])
+        RUN(['halcmd', 'setp', 'plasmac.pierce-end-height', '0.0'])
+        RUN(['halcmd', 'setp', 'plasmac.gouge-speed', '0.0'])
+        RUN(['halcmd', 'setp', 'plasmac.gouge-speed-distance', '0.0'])
+        RUN(['halcmd', 'setp', 'plasmac.creep-speed', '0.0'])
+        RUN(['halcmd', 'setp', 'plasmac.creep-speed-distance', '0.0'])
+
 
         
     return INTERP_OK
