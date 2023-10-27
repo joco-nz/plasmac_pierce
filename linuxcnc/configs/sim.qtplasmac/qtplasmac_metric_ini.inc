@@ -40,7 +40,7 @@ USER_M_PATH             = ./:../../nc_files
 # Q = Creep Speed (Speed in machine units. Creep takes effect after gouge has finished)
 # R = Creep Distance (Distance of creep to travel in machine units)
 # M259 D2 E20 I3 J5 K325 P10 Q80 R10
-REMAP=M259 argspec=DEIJKPQR python=m259 modalgroup=10
+REMAP=M259 argspec=Deijkpqr python=m259 modalgroup=10
 
 
 [HAL]
