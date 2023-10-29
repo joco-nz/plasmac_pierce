@@ -1526,12 +1526,12 @@ FUNCTION(_) {
                 }
                 break;
             case PIERCE_DELAY:
-                rtapi_print("PIERCE_DELAY\n");
+                rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY\n");
                 stop_type = NONE;
                 /* wait for arc to pierce stock */
                 feed_hold = TRUE;       // base assumption is no motion
                 if(pierce_type != 0){   // Test pierce type. 0=Normal, 1=Wiggle, 2=Ramp
-                    rtapi_print("PIERCE_DELAY - pierce_type >0\n");
+                    rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - pierce_type >0\n");
                     feed_hold = FALSE;  // We have motion for non normal pierce (wiggle and ramp)
                     if(pierce_type == 2){
                         /* for ramp we map have no motion for a period at the start before commencing a moving pierce and loweing height
@@ -1547,7 +1547,7 @@ FUNCTION(_) {
                            B. Crawl speed for crawl time periof
                            C. Cut speed - should returning to normal feed rate.
                         */
-                        rtapi_print("PIERCE_DELAY - pierce_type == 2\n");
+                        rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - pierce_type == 2\n");
                         /* Set up some key variables */
                         gouge_speed_scale = gouge_speed / cut_feed_rate;
                         creep_speed_scale = creep_speed / cut_feed_rate;
@@ -1557,7 +1557,7 @@ FUNCTION(_) {
                         ------------------------------------*/
                         if (gouge_speed_dist_travelled < gouge_speed_distance){
                             /* Seq A - gouge distance*/
-                            rtapi_print("PIERCE_DELAY - Seq A\n");
+                            rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - Seq A\n");
                             if(gcode_scale == 1){
                                 requested_feed_rate = cut_feed_rate * gouge_speed_scale;
                             }else{
@@ -1570,7 +1570,7 @@ FUNCTION(_) {
                             pierce_old_y = axis_y_position;
                         }else if(creep_speed_dist_travelled < creep_speed_distance){
                             /* Seq B - creep distance */
-                            rtapi_print("PIERCE_DELAY - Seq B\n");
+                            rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - Seq B\n");
                             if(gcode_scale == 1){
                                 requested_feed_rate = cut_feed_rate * creep_speed_scale;
                             }else{
@@ -1583,7 +1583,7 @@ FUNCTION(_) {
                             pierce_old_y = axis_y_position;
                         }else{
                             /* Seq C - set to cut speed */
-                            rtapi_print("PIERCE_DELAY - set requested feed = cut feed\n");
+                            rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - set requested feed = cut feed\n");
                             requested_feed_rate = cut_feed_rate;
                         }
 
@@ -1592,19 +1592,19 @@ FUNCTION(_) {
                         ------------------------------------*/
                         if (pierce_motion_delay_timer > 0){
                             // Sequence 1
-                            rtapi_print("PIERCE_DELAY - Seq 1\n");
+                            rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - Seq 1\n");
                             pierce_motion_delay_timer -= fperiod;
                         }else if(z_offset_counts != pierce_end_target){
                             // Sequence 2
-                            rtapi_print("PIERCE_DELAY - Seq 2\n");
+                            rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - Seq 2\n");
                             z_offset_enable = TRUE;
-                            rtapi_print("PIERCE_DELAY - move z_offset_counts\n");
+                            rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - move z_offset_counts\n");
                             z_offset_counts = offset_move(z_offset_counts,
                                             (((pierce_height - pierce_end_height)/(pierce_delay - ((pierce_motion_delay/100)*pierce_delay)))*60)*velocity_scale,
                                             pierce_end_target);
                         }else{
                             // Sequence 3
-                            rtapi_print("PIERCE_DELAY - Seq 3\n");
+                            rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - Seq 3\n");
                             cut_height_delay_timer -= fperiod;
                         }
                     }
