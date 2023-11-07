@@ -1563,6 +1563,7 @@ FUNCTION(_) {
                             }else{
                                 requested_feed_rate = (cut_feed_rate * gouge_speed_scale) / gcode_scale;
                             }
+                            adaptive_feed = gouge_speed_scale;
                             // accumulate gouge distance traveled in XY plane
                             gouge_speed_dist_travelled += fabs(sqrt(pow(pierce_old_x - axis_x_position, 2) + pow(pierce_old_y - axis_y_position, 2)));
                             // record current X/Y for next accumulation calc
@@ -1576,6 +1577,7 @@ FUNCTION(_) {
                             }else{
                                 requested_feed_rate = (cut_feed_rate * creep_speed_scale) / gcode_scale;
                             }
+                            adaptive_feed = creep_speed_scale;
                             // accumulate gouge distance traveled in XY plane
                             creep_speed_dist_travelled += fabs(sqrt(pow(pierce_old_x - axis_x_position, 2) + pow(pierce_old_y - axis_y_position, 2)));
                             // record current X/Y for next accumulation calc
@@ -1585,6 +1587,7 @@ FUNCTION(_) {
                             /* Seq C - set to cut speed */
                             rtapi_print_msg(RTAPI_MSG_DBG,"PIERCE_DELAY - set requested feed = cut feed\n");
                             requested_feed_rate = cut_feed_rate;
+                            adaptive_feed = 1;
                         }
 
                         /* ---------------------------------
