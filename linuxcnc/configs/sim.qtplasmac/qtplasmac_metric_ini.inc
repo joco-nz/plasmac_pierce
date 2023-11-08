@@ -30,18 +30,6 @@ SUBROUTINE_PATH         = ./:../../nc_files
 USER_M_PATH             = ./:../../nc_files
 
 
-# A cycle in Python: M259 DEIJKPQR
-# D = Pierce Type  (0=Normal, 1-Wiggle, 2=Ramp)
-# E = Pierce Motion Delay  (Delay in Z motion to Pierce End Height expressed as a % of Pierce Delay)
-# I = Cut Height Delay (At the end of transition to Pierce End Height wait x secs before transition to Cut Height)
-# J = Pierce Ende Height (Target pierce height at end of Pierce Delay. Normally lower than Pierce Height)
-# K = Gouge Speed (Speed in machine units/min)
-# P = Gouge Distance (Distance of gouge to travel in machine units)
-# Q = Creep Speed (Speed in machine units. Creep takes effect after gouge has finished)
-# R = Creep Distance (Distance of creep to travel in machine units)
-# M259 D2 E20 I3 J5 K325 P10 Q80 R10
-REMAP=M259 argspec=Deijkpqr python=m259 modalgroup=10
-
 
 [HAL]
 TWOPASS                 = ON
