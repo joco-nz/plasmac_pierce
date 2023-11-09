@@ -157,9 +157,9 @@ pin in  float   pierce_motion_delay = 0     "delay starting motion during pierce
 pin in  float   cut_height_delay = 0        "at the end of transition to end-perice-height how long to pause before transition to cut height";
 pin in  float   pierce_end_height = 0       "The height at end of piercing (in machine units). Can be different to Cut Height. Default 0 means not used. i.e. no change in height";
 pin in  float   gouge_speed = 0             "Ramp starting speed for gouge. In machine units/min.";
-pin in  float   gouge_speed_distance = 0;
+pin in  float   gouge_speed_distance = 0    "Distance gouge will run in machine units. Gouge plus creep distance should not be longer than any lead in";
 pin in  float   creep_speed = 0             "Ramp creep or intermediate speed. Comes after gouge and is before cut speed. In machine units/min.";
-pin in  float   creep_speed_distance = 0;
+pin in  float   creep_speed_distance = 0    "Distance creep will run in machine units. Gouge plus creep distance should not be longer than any lead in";
 
 /* OUTPUT PINS */
 pin out float   adaptive_feed               "for reverse-run, connect to motion.adaptive-feed";
@@ -327,12 +327,12 @@ variable float  pierce_motion_delay_timer;  /* delay starting motion during pier
 variable float  cut_height_delay_timer;     /* at the end of transition to end-perice-height how long to pause before transition to cut height*/
 variable float  total_pierce_state_delay;   /* Total of pierce delay and cut motion delay */
 variable int    pierce_end_target;          /* Target pierce height at end of pierce motion. Usually less than the starting pierce height */
-variable float  gouge_speed_dist_travelled;
-variable float  gouge_speed_scale;
-variable float  creep_speed_dist_travelled;
-variable float  creep_speed_scale;
-variable float  pierce_old_x;
-variable float  pierce_old_y;
+variable float  gouge_speed_dist_travelled; /* Sum of distance traveled during gouge stage */
+variable float  gouge_speed_scale;          /* scale of gouge speed in proportion to standard cut feed rate */
+variable float  creep_speed_dist_travelled; /* Sum of distance traveled during creep stage */
+variable float  creep_speed_scale;          /* scale of creep speed in proportion to standard cut feed rate */
+variable float  pierce_old_x;               /* tracking the last x location during pierce */
+variable float  pierce_old_y;               /* tracking the last y location during pierce */
 
 // temp for testing forum post #210558
 // https://forum.linuxcnc.org/plasmac/42690-is-this-qtplasmac-expected-behaviour-cycle-start-and-jog-disabled?start=0#210558
